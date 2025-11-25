@@ -23,6 +23,27 @@ public class TherapistController {
     private final TherapistService therapistService;
     private final ScheduleService scheduleService;
 
+
+    @GetMapping
+    public List<TherapistResponseDTO> getAllTherapists() {
+        return therapistService.getAllTherapists();
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getTherapistById(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(therapistService.getTherapistById(id));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(404).body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/expertise/{exp}")
+    public List<TherapistResponseDTO> getTherapistsByExpertise(@PathVariable String exp) {
+        return therapistService.getTherapistsByExpertise(exp);
+    }
+
+
     @PostMapping
     public ResponseEntity<TherapistResponseDTO> createTherapist(@RequestBody Therapist therapist) {
         Therapist saved = therapistService.addTherapist(therapist);
@@ -76,24 +97,7 @@ public class TherapistController {
 
         return ResponseEntity.ok(weeklySchedule);
     }
-    @GetMapping
-    public List<TherapistResponseDTO> getAllTherapists() {
-        return therapistService.getAllTherapists();
-    }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<?> getTherapistById(@PathVariable Long id) {
-        try {
-            return ResponseEntity.ok(therapistService.getTherapistById(id));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(404).body(e.getMessage());
-        }
-    }
-
-    @GetMapping("/expertise/{exp}")
-    public List<TherapistResponseDTO> getTherapistsByExpertise(@PathVariable String exp) {
-        return therapistService.getTherapistsByExpertise(exp);
-    }
 
 
     @DeleteMapping("/{id}")
