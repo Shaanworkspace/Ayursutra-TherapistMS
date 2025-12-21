@@ -18,6 +18,10 @@ public class TherapySpecializationController {
 
     private final TherapySpecializationService specializationService;
     private final TherapySpecializationRepository specializationRepository;
+    @GetMapping("/health")
+    public ResponseEntity<String> health() {
+        return ResponseEntity.ok("THERAPIST SERVICE UP");
+    }
 
     // ========================================
     //  1. Fetch all specializations (DTO list)

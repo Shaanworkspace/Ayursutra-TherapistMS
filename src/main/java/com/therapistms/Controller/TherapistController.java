@@ -1,5 +1,6 @@
 package com.therapistms.Controller;
 
+
 import com.therapistms.DTO.Response.ScheduleSlotDTO;
 import com.therapistms.DTO.Response.TherapistResponseDTO;
 import com.therapistms.DTO.Response.WeeklyScheduleDTO;
@@ -22,7 +23,10 @@ public class TherapistController {
 
     private final TherapistService therapistService;
     private final ScheduleService scheduleService;
-
+    @GetMapping("/health")
+    public ResponseEntity<String> health() {
+        return ResponseEntity.ok("THERAPIST SERVICE UP");
+    }
 
     @GetMapping
     public List<TherapistResponseDTO> getAllTherapists() {
@@ -77,25 +81,6 @@ public class TherapistController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body("❌ " + e.getMessage());
         }
-    }
-
-    @PostMapping("/{therapistId}/schedule-week")
-    public ResponseEntity<List<WeeklyScheduleDTO>> generateWeekSchedule(
-            @PathVariable Long therapistId,
-            @RequestParam String startDate, // Monday date (ISO-8601)
-            @RequestBody List<TimeRangeRequest> slotTimes) {
-
-        LocalDate start = LocalDate.parse(startDate);
-
-        // Convert request to a list of time ranges
-        List<LocalTime[]> ranges = slotTimes.stream()
-                .map(t -> new LocalTime[]{LocalTime.parse(t.getStartTime()), LocalTime.parse(t.getEndTime())})
-                .toList();
-
-        List<WeeklyScheduleDTO> weeklySchedule =
-                scheduleService.generateWeeklySchedule(therapistId, start, ranges);
-
-        return ResponseEntity.ok(weeklySchedule);
     }
 
 
