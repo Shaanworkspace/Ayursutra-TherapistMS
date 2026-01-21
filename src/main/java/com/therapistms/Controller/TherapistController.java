@@ -33,7 +33,7 @@ public class TherapistController {
         return therapistService.getAllTherapists();
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/check/{id}")
     public ResponseEntity<?> getTherapistById(@PathVariable Long id) {
         try {
             return ResponseEntity.ok(therapistService.getTherapistById(id));
