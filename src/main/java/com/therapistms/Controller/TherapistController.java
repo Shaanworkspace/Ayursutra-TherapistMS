@@ -1,28 +1,28 @@
 package com.therapistms.Controller;
 
 
-import com.therapistms.DTO.Response.ScheduleSlotDTO;
+import com.therapistms.DTO.Request.RegisterRequestDTO;
 import com.therapistms.DTO.Response.TherapistResponseDTO;
-import com.therapistms.DTO.Response.WeeklyScheduleDTO;
-import com.therapistms.Entity.ScheduleSlot;
 import com.therapistms.Entity.Therapist;
-import com.therapistms.Service.ScheduleService;
+import com.therapistms.Repository.TherapistRepository;
 import com.therapistms.Service.TherapistService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/therapists")
 @RequiredArgsConstructor
+@Slf4j
 public class TherapistController {
 
     private final TherapistService therapistService;
-    private final ScheduleService scheduleService;
+    private final TherapistRepository therapistRepository;
+
     @GetMapping("/health")
     public ResponseEntity<String> health() {
         return ResponseEntity.ok("THERAPIST SERVICE UP");
@@ -33,23 +33,37 @@ public class TherapistController {
         return therapistService.getAllTherapists();
     }
 
-    @GetMapping("/check/{id}")
-    public ResponseEntity<?> getTherapistById(@PathVariable Long id) {
+
+    @GetMapping("/profile/me")
+    public TherapistResponseDTO getMyProfile(Authentication authentication) {
+        String email = (String) authentication.getPrincipal();
+        boolean exist = therapistRepository.existsByEmail(email);
+        if (!exist){
+            throw new RuntimeException(
+                    "Therapist not Exist for email: " + email
+            );
+        }
+        log.info("Therapist controller METHOD : GET , REQUEST : profile/me , principle of authentication with Email :{} ",email);
+        Therapist therapist = therapistRepository.findByEmail(email);
+
+        if (therapist == null) throw new RuntimeException("Therapist not found for email: " + email);
+        return therapistService.therapistToDTO(therapist);
+    }
+
+    @GetMapping("/exist/{email}")
+    public boolean checkTherapistByEmailId(@PathVariable String email) {
         try {
-            return ResponseEntity.ok(therapistService.getTherapistById(id));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(404).body(e.getMessage());
+	        return therapistRepository.existsByEmail(email);
+        } catch (RuntimeException e) {
+            log.info("No Therapist");
+            return false;
         }
     }
 
-    @GetMapping("/expertise/{exp}")
-    public List<TherapistResponseDTO> getTherapistsByExpertise(@PathVariable String exp) {
-        return therapistService.getTherapistsByExpertise(exp);
-    }
 
 
     @PostMapping
-    public ResponseEntity<TherapistResponseDTO> createTherapist(@RequestBody Therapist therapist) {
+    public ResponseEntity<TherapistResponseDTO> createTherapist(@RequestBody RegisterRequestDTO therapist) {
         Therapist saved = therapistService.addTherapist(therapist);
         return ResponseEntity.ok(therapistService.therapistToDTO(saved));
     }
@@ -58,30 +72,6 @@ public class TherapistController {
     public List<Therapist> createTherapists(@RequestBody List<Therapist> therapists) {
         return therapistService.createTherapists(therapists);
     }
-    @PutMapping("/{therapistId}/book-slot/{slotId}")
-    public ResponseEntity<?> bookSlot(
-            @PathVariable Long therapistId,
-            @PathVariable Long slotId,
-            @RequestParam Long patientId
-    ) {
-        try {
-            ScheduleSlot booked = scheduleService.bookSlot(therapistId, slotId, patientId);
-
-            ScheduleSlotDTO dto = new ScheduleSlotDTO(
-                    booked.getId(),
-                    booked.getDate(),
-                    booked.getStartTime(),
-                    booked.getEndTime(),
-                    booked.getStatus(),
-                    booked.getBookedByPatientId() != null ? booked.getBookedByPatientId() : null
-            );
-
-            return ResponseEntity.ok(dto);
-
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body("❌ " + e.getMessage());
-        }
-    }
 
 
 
@@ -89,7 +79,7 @@ public class TherapistController {
     public ResponseEntity<?> deleteTherapist(@PathVariable Long id) {
         try {
             therapistService.deleteTherapist(id);
-            return ResponseEntity.ok("✅ Therapist deleted with id"+id);
+            return ResponseEntity.ok("Therapist deleted with id"+id);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(404).body(e.getMessage());
         }
