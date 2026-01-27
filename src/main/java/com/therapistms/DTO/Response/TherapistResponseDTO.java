@@ -21,7 +21,7 @@ public class TherapistResponseDTO {
     private Integer yearsOfExperience;
     private String expertise;
     @Builder.Default
-    private String role="DOCTOR";
+    private String role="THERAPIST";
 
     List<MedicalRecord> medicalRecords;
 }
