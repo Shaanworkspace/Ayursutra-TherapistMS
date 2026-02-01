@@ -1,11 +1,10 @@
 package com.therapistms.Client;
 
 
-import com.therapistms.DTO.Response.MedicalRecord;
+import com.therapistms.DTO.Request.MedicalRecordUpdateRequest;
+import com.therapistms.DTO.Response.MedicalRecordResponseDTO;
 import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -17,6 +16,14 @@ public interface PatientClient {
 	@GetMapping("/api/patients/check/{userId}")
 	boolean checkPatientByUserId(@PathVariable String userId);
 
-	@GetMapping("/api/patients/medical-records/therapist/{therapistId}")
-	List<MedicalRecord> medicalRecordsByTherapistId(@PathVariable String therapistId);
+	@GetMapping("/api/patients/medical-records/batch")
+	List<MedicalRecordResponseDTO> getMedicalRecordsByIds(
+			@RequestParam List<String> ids
+	);
+
+	@GetMapping("api/patients/medical-records/check/{medicalId}")
+	Boolean checkMedicalRecordByMedicalId(@PathVariable String medicalId);
+
+	@PutMapping("api/patients/medical-records/{recordId}/therapist")
+	Boolean updateMedicalRecord (@PathVariable String recordId,@RequestBody MedicalRecordUpdateRequest medicalRecordResponseDTO);
 }

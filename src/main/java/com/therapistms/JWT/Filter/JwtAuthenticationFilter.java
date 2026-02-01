@@ -20,6 +20,7 @@ import java.util.List;
 @Slf4j
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
 	private final JwtUtil jwtUtil;
 
 	@Override
@@ -29,11 +30,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 			FilterChain filterChain
 	) throws ServletException, IOException {
 
-		log.info("Accepted By Jwt Filter in TherapistMS request: {}", request.getRequestURI());
+		log.info(
+				"Incoming request intercepted by JwtAuthenticationFilter: {}",
+				request.getRequestURI()
+		);
 
 		String header = request.getHeader("Authorization");
+
 		if (header == null || !header.startsWith("Bearer ")) {
-			log.info("No Header");
+			log.info(
+					"No Authorization header found for request: {}",
+					request.getRequestURI()
+			);
 			filterChain.doFilter(request, response);
 			return;
 		}
@@ -45,46 +53,71 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 			String subject = claims.getSubject();
 
 			if (jwtUtil.isServiceToken(claims)) {
-				log.info("Identified as Service token from: {}", subject);
 
-				UsernamePasswordAuthenticationToken auth =
+				log.info(
+						"Authenticated SERVICE token | Subject: {} | Allowing request: {}",
+						subject,
+						request.getRequestURI()
+				);
+
+				UsernamePasswordAuthenticationToken authentication =
 						new UsernamePasswordAuthenticationToken(
 								subject,
 								null,
 								List.of(() -> "ROLE_SERVICE")
 						);
 
-				log.info("We set this request :{} as role : ROLE_SERVICE",request.getRequestURI());
-				SecurityContextHolder.getContext().setAuthentication(auth);
+				SecurityContextHolder
+						.getContext()
+						.setAuthentication(authentication);
+
 			} else {
-				log.info("User token for userId/email: {}", subject);
+
 				String role = claims.get("role", String.class);
 
 				if (role == null) {
-					throw new RuntimeException("Role missing in JWT");
+					log.error(
+							"JWT missing role claim | Rejecting request: {}",
+							request.getRequestURI()
+					);
+					response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+					return;
 				}
 
-				UsernamePasswordAuthenticationToken auth =
+				log.info(
+						"Authenticated USER token | Subject: {} | Role: ROLE_{} | Allowing request: {}",
+						subject,
+						role,
+						request.getRequestURI()
+				);
+
+				UsernamePasswordAuthenticationToken authentication =
 						new UsernamePasswordAuthenticationToken(
 								subject,
 								null,
 								List.of(() -> "ROLE_" + role)
 						);
 
-				log.info(
-						"We set this request : {} as role : ROLE_{}",
-						request.getRequestURI(),
-						role
-				);
-
-				SecurityContextHolder.getContext().setAuthentication(auth);
-
+				SecurityContextHolder
+						.getContext()
+						.setAuthentication(authentication);
 			}
-		} catch (Exception e) {
-			log.error("Invalid JWT Declared by Therapist Service", e);
+
+		} catch (Exception ex) {
+			log.error(
+					"JWT validation failed | Rejecting request: {}",
+					request.getRequestURI(),
+					ex
+			);
 			response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 			return;
 		}
+
+		log.debug(
+				"Request {} passed JwtAuthenticationFilter successfully",
+				request.getRequestURI()
+		);
+
 		filterChain.doFilter(request, response);
 	}
 }

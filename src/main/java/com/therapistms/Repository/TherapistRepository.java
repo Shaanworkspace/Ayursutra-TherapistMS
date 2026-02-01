@@ -16,4 +16,8 @@ public interface TherapistRepository extends JpaRepository<Therapist, Long> {
     Optional<Therapist> findByUserId(String userId);
 
     boolean existsByEmail(String email);
+
+	Therapist findTherapistByUserId(String userId);
+
+	Therapist findTherapistByEmail(String email);
 }

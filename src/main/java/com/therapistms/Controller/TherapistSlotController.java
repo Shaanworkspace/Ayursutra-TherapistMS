@@ -1,5 +1,6 @@
 package com.therapistms.Controller;
 
+import com.therapistms.Entity.Scheduling.TherapistSlot;
 import com.therapistms.Service.TherapistSlotService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -8,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/therapists/slots")
@@ -23,6 +25,27 @@ public class TherapistSlotController {
 				slotService.getAllSlotsByTherapist(email)
 		);
 	}
+
+	@GetMapping("/therapist/{therapistId}")
+	public List<TherapistSlot> getAllTherapistSlotByTherapistId(@PathVariable String therapistId){
+		return slotService.getAllSlotsByTherapist(therapistId);
+	}
+
+	@GetMapping("/available-slots")
+	public ResponseEntity<List<TherapistSlot>> getAvailableSlots(
+			@RequestParam String therapistId,
+			@RequestParam String from,
+			@RequestParam String to
+	) {
+		return ResponseEntity.ok(
+				slotService.getAvailableSlotsInRange(
+						therapistId,
+						LocalDate.parse(from),
+						LocalDate.parse(to)
+				)
+		);
+	}
+
 
 	@GetMapping
 	public ResponseEntity<?> getSlotsForDay(

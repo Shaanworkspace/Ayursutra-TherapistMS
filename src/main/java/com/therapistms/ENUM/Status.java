@@ -4,7 +4,9 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 
 public enum Status {
     ACTIVE,
+    SCHEDULED,
     COMPLETED,
+    CANCELLED,
     PENDING,
     HAVING_TREATMENT,
     HAVING_THERAPY;

@@ -23,5 +23,5 @@ public class TherapistResponseDTO {
     @Builder.Default
     private String role="THERAPIST";
 
-    List<MedicalRecord> medicalRecords;
+    List<MedicalRecordResponseDTO> medicalRecords;
 }

@@ -6,6 +6,7 @@ import com.therapistms.Entity.Therapist;
 import com.therapistms.Repository.TherapistRepository;
 import com.therapistms.Repository.TherapistSlotRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -14,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class TherapistSlotService {
@@ -22,11 +24,11 @@ public class TherapistSlotService {
 	private final TherapistRepository therapistRepository;
 
 	public List<TherapistSlot> getAllSlotsByTherapist(String email) {
-		Therapist therapist = therapistRepository.findByEmail(email);
+		Therapist therapist = therapistRepository.findTherapistByEmail(email);
 		if (therapist == null) {
-			throw new RuntimeException("Therapist not found");
+			log.info("Therapist not found with email id : {}",email);
+			return List.of();
 		}
-
 		return slotRepository.findByTherapistId(therapist.getUserId());
 	}
 
@@ -38,11 +40,15 @@ public class TherapistSlotService {
 		if (therapist == null) {
 			throw new RuntimeException("Therapist not found");
 		}
-
-		return slotRepository.findByTherapistIdAndSlotDate(
+		List<TherapistSlot> therapistSlots = slotRepository.findByTherapistIdAndSlotDate(
 				therapist.getUserId(),
 				date
 		);
+		if(therapistSlots.isEmpty()){
+			log.info("No Therapist Slot fount with therapistEmail : {}",therapistEmail);
+			return List.of();
+		}
+		return therapistSlots;
 	}
 
 
@@ -132,5 +138,26 @@ public class TherapistSlotService {
 		return slotRepository.save(slot);
 	}
 
+	private boolean isDateInRange(LocalDate date, LocalDate from, LocalDate to) {
+		return (date.isEqual(from) || date.isAfter(from)) &&
+				(date.isEqual(to)   || date.isBefore(to));
+	}
+
+	public List<TherapistSlot> getAvailableSlotsInRange(String therapistId, LocalDate from,
+	                                                    LocalDate to) {
+		if (from.isAfter(to)) {
+			throw new IllegalArgumentException("From date cannot be after To date");
+		}
+
+		List<TherapistSlot> therapistSlots =
+				slotRepository.findByTherapistId(therapistId);
+
+		List<TherapistSlot> slotsInRange = therapistSlots.stream()
+				.filter(slot -> isDateInRange(slot.getSlotDate(), from, to))
+				.toList();
+
+		return slotsInRange;
+
+	}
 }
 
