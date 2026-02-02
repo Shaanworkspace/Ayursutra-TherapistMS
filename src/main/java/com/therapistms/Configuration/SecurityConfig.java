@@ -25,7 +25,7 @@ public class SecurityConfig {
 
 		http
 				.csrf(AbstractHttpConfigurer::disable)
-				.cors(Customizer.withDefaults())
+				.cors(AbstractHttpConfigurer::disable)
 				.sessionManagement(session ->
 						session.sessionCreationPolicy(
 								SessionCreationPolicy.STATELESS
