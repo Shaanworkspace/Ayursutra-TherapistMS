@@ -72,16 +72,14 @@ public class TherapyPlanController {
 		return ResponseEntity.ok(therapyPlanService.mapToResponse(therapyPlan));
 	}
 
-	@PostMapping
+	@PostMapping("/post")
 	public ResponseEntity<Boolean> createTherapyPlan(
 			@RequestBody TherapyPlanRequest request) {
-		log.info("creating Therapy Plan");
+		log.info("Creating Therapy Plan with a request: {}",request);
 		boolean response =
 				therapyPlanService.createTherapyPlan(request);
 		return new ResponseEntity<>(response, HttpStatus.CREATED);
 	}
-
-
 
 
 	@PutMapping("/{id}/decision")
@@ -101,6 +99,5 @@ public class TherapyPlanController {
 	public void completeSession(@PathVariable String id) {
 		therapyPlanService.completeSession(id);
 	}
-
 
 }

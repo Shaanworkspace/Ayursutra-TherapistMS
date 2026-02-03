@@ -46,6 +46,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 			return;
 		}
 
+
+		log.info(
+				"Authorization header is : {} found for request: {}",header,
+				request.getRequestURI()
+		);
+
 		String token = header.substring(7);
 
 		try {
