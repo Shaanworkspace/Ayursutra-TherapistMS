@@ -39,7 +39,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
 		if (header == null || !header.startsWith("Bearer ")) {
 			log.info(
-					"No Authorization header found for request: {}",
+					"No Authorization header is : {} found for request: {}",header,
 					request.getRequestURI()
 			);
 			filterChain.doFilter(request, response);
