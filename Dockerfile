@@ -1,12 +1,19 @@
-# Build stage
+# Step 1: Build stage
 FROM maven:3.9.9-eclipse-temurin-21 AS builder
 WORKDIR /app
 COPY . .
-RUN mvn -B clean package -DskipTests
+RUN mvn clean package -DskipTests
 
-# Runtime stage
-FROM eclipse-temurin:21-jdk-alpine
-WORKDIR /app
-COPY --from=builder /app/target/*.jar app.jar
-EXPOSE 8083
-ENTRYPOINT ["java","-jar","app.jar"]
+# Step 2: Runtime stage
+FROM public.ecr.aws/lambda/java:21
+WORKDIR /var/task
+
+# JAR ko copy karo
+COPY --from=builder /app/target/DoctorMS-0.0.1-SNAPSHOT.jar app.jar
+
+# JAR ko extract (unzip) karo seedha /var/task mein
+# Ye step BOOT-INF se classes nikal kar bahar le aayega
+RUN jar -xf app.jar && rm app.jar
+
+# Handler ka path
+CMD [ "com.therapistms.StreamLambdaHandler::handleRequest" ]

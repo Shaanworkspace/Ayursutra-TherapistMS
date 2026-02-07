@@ -1,0 +1,16 @@
+DB_DDL=update
+DB_PASSWORD=AVNS_bftr8UKWppww-0ANAOZ
+DB_URL="jdbc:mysql://mysql-197d3cc9-shaanyworkspace.c.aivencloud.com:14273/ayursutra?ssl-mode=REQUIRED&serverTimezone=UTC"
+DB_USERNAME=avnadmin
+PORT=8083
+RABBITMQ_PASS=sMZm3gic-y-AkLzdZ-GznO_6oQOb4XSx
+RABBITMQ_USER=xxdyrbyp
+SPRING_PROFILES_ACTIVE=docker
+jwtSecretKeyENV=asdfkljhasfhkdjlashfjksdkfhioqwteiruncvzxmiye
+
+
+AWS_ACCESS_KEY_ID: AKIAZGNPNVXVYQC4N2WZ
+
+AWS_SECRET_ACCESS_KEY: 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
+
+AWS_REGION: ap-south-1
