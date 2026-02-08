@@ -8,7 +8,6 @@ RUN mvn clean package -DskipTests
 FROM public.ecr.aws/lambda/java:21
 WORKDIR /var/task
 
-# JAR ko copy karo
 COPY --from=builder /app/target/TherapistMS-0.0.1-SNAPSHOT.jar app.jar
 
 # JAR ko extract (unzip) karo seedha /var/task mein
