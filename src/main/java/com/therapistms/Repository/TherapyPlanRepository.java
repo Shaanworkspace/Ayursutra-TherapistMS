@@ -11,11 +11,10 @@ public interface TherapyPlanRepository extends JpaRepository<TherapyPlan, String
 
 	List<TherapyPlan> findAllByTherapistId(String therapistId);
 
-	boolean existsByMedicalRecordIdAndTherapistId(String medicalRecordId, String therapistId);
-
-	TherapyPlan findTherapyPlansByMedicalRecordId(String medicalRecordId);
+	Optional<TherapyPlan>  findTherapyPlansByMedicalRecordId(String medicalRecordId);
 
 	Optional<TherapyPlan> findTherapyPlanByTherapyPlanId(String therapyPlanId);
 
-	TherapyPlan findTherapyPlansByTherapyPlanId(String therapyPlanId);
+
+	TherapyPlan findByMedicalRecordIdAndTherapistId(String medicalRecordId, String therapistId);
 }

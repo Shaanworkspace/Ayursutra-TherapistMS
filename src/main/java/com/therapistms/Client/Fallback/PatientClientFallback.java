@@ -26,12 +26,6 @@ public class PatientClientFallback implements PatientClient {
 	}
 
 	@Override
-	public Boolean checkMedicalRecordByMedicalId(String medicalId) {
-		log.warn("Falling back from Therapist MS as no medical record found by medical record id : {}",medicalId);
-		return false;
-	}
-
-	@Override
 	public Boolean updateMedicalRecord(String recordId, MedicalRecordUpdateRequest medicalRecordResponseDTO) {
 		log.warn("FallBack");
 		return null;

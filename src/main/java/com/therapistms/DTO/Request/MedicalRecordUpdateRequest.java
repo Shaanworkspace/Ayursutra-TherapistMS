@@ -1,6 +1,6 @@
 package com.therapistms.DTO.Request;
 
-import com.therapistms.ENUM.Status;
+import com.therapistms.ENUM.MedicalRecordStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,6 +11,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class MedicalRecordUpdateRequest {
-	private Boolean needTherapy;
-	private Status sessionStatus;
+	private boolean needTherapy = false;
+	private MedicalRecordStatus sessionMedicalRecordStatus;
 }

@@ -3,14 +3,12 @@ package com.therapistms.Controller;
 
 import com.therapistms.DTO.Request.TherapyPlanRequest;
 import com.therapistms.DTO.Response.TherapyPlanDTO;
-import com.therapistms.ENUM.TherapistDecisionStatus;
 import com.therapistms.Entity.TherapyPlan;
 import com.therapistms.Repository.TherapyPlanRepository;
 import com.therapistms.Service.TherapyPlanService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-//import org.springframework.http.ResponseEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -64,7 +62,7 @@ public class TherapyPlanController {
 	public ResponseEntity<TherapyPlanDTO> getTherapyPlanByMedicalRecordId(
 			@PathVariable String medicalRecordId) {
 
-		TherapyPlan therapyPlan =  therapyPlanRepository.findTherapyPlansByMedicalRecordId(medicalRecordId);
+		TherapyPlan therapyPlan =  therapyPlanRepository.findTherapyPlansByMedicalRecordId(medicalRecordId).orElse(null);
 		if(therapyPlan==null){
 			log.warn("No Therapy plan found for medicalRecordId = {}", medicalRecordId);
 		    return ResponseEntity.ok(null);
@@ -75,24 +73,26 @@ public class TherapyPlanController {
 	@PostMapping("/post")
 	public ResponseEntity<Boolean> createTherapyPlan(
 			@RequestBody TherapyPlanRequest request) {
-		log.info("Creating Therapy Plan with a request: {}",request);
+		log.info("Creating Therapy Plan with a request: {}",request.toString());
 		boolean response =
 				therapyPlanService.createTherapyPlan(request);
 		return new ResponseEntity<>(response, HttpStatus.CREATED);
 	}
 
 
-	@PutMapping("/{id}/decision")
-	public void updateDecision(
-			@PathVariable String id,
-			@RequestParam TherapistDecisionStatus status
-	) {
-		therapyPlanService.updateTherapistDecision(id, status);
+	@PutMapping("/{therapyPlanId}/start")
+	public void startTherapy(@PathVariable String therapyPlanId) {
+		therapyPlanService.startTherapy(therapyPlanId);
 	}
 
-	@PutMapping("/{id}/start")
-	public void startTherapy(@PathVariable String id) {
-		therapyPlanService.startTherapy(id);
+	@PutMapping("/{medicalRecordId}/diagnose")
+	public ResponseEntity<Boolean> diagnosedByTherapist(
+			@PathVariable String medicalRecordId,
+			@RequestBody TherapyPlanRequest request) {
+
+		log.info("Therapist diagnosis received of medical id : {}", medicalRecordId);
+		boolean success = therapyPlanService.diagnosedByTherapist(medicalRecordId, request);
+		return ResponseEntity.ok(success);
 	}
 
 	@PutMapping("/{id}/session/complete")

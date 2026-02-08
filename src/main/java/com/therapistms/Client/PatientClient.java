@@ -21,9 +21,6 @@ public interface PatientClient {
 			@RequestParam List<String> ids
 	);
 
-	@GetMapping("api/patients/medical-records/check/{medicalId}")
-	Boolean checkMedicalRecordByMedicalId(@PathVariable String medicalId);
-
-	@PutMapping("api/patients/medical-records/{recordId}/therapist")
+	@PutMapping("/api/patients/medical-records/{recordId}/therapist")
 	Boolean updateMedicalRecord (@PathVariable String recordId,@RequestBody MedicalRecordUpdateRequest medicalRecordResponseDTO);
 }

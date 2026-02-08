@@ -1,10 +1,10 @@
 package com.therapistms.DTO.Response;
 
-import com.therapistms.ENUM.TherapistDecisionStatus;
 import com.therapistms.ENUM.TherapyPlanStatus;
 import com.therapistms.ENUM.TherapyType;
 import lombok.*;
 import java.time.LocalDate;
+import java.util.List;
 
 @Getter
 @Setter
@@ -14,20 +14,16 @@ import java.time.LocalDate;
 public class TherapyPlanDTO {
 
 	private String therapyPlanId;
-
-	private TherapyType therapyType;
-
-	private int totalSessions;
-	private int completedSessions;
+	private int totalTherapySessions;
+	private int bookedTherapySessions;
+	private int completedTherapySessions;
 
 	private int sessionDurationMinutes;
 	private String frequency;
-	private TherapistDecisionStatus therapistDecisionStatus;
 	private TherapyPlanStatus status;
+	private List<TherapyType> therapies;
 
 	private LocalDate startDate;
-
-
 	private String therapistId;
 	private String therapistName;
 

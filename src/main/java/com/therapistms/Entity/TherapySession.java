@@ -1,7 +1,6 @@
 package com.therapistms.Entity;
 
 import com.therapistms.ENUM.SlotStatus;
-import com.therapistms.ENUM.Status;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -27,8 +26,9 @@ public class TherapySession {
 	private String sessionId;
 
 	private String therapyPlanId;
-
 	private String therapistId;
+	private String medicalRecordId;
+
 	private String slotId;
 
 	private LocalDate sessionDate;

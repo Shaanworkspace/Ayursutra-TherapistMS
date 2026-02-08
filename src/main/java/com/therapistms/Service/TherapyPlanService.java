@@ -4,12 +4,16 @@ import com.therapistms.Client.PatientClient;
 import com.therapistms.DTO.Request.MedicalRecordUpdateRequest;
 import com.therapistms.DTO.Request.TherapyPlanRequest;
 import com.therapistms.DTO.Response.TherapyPlanDTO;
-import com.therapistms.ENUM.TherapistDecisionStatus;
+import com.therapistms.ENUM.MedicalRecordStatus;
+import com.therapistms.ENUM.SlotStatus;
 import com.therapistms.ENUM.TherapyPlanStatus;
 import com.therapistms.Entity.Therapist;
 import com.therapistms.Entity.TherapyPlan;
+import com.therapistms.Entity.TherapySession;
 import com.therapistms.Repository.TherapistRepository;
 import com.therapistms.Repository.TherapyPlanRepository;
+import com.therapistms.Repository.TherapySessionRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -25,100 +29,54 @@ public class TherapyPlanService {
 	private final TherapyPlanRepository therapyPlanRepository;
 	private final TherapistRepository therapistRepository;
 	private final PatientClient patientClient;
+	private  final TherapySessionRepository sessionRepository;
 
 	public boolean createTherapyPlan(TherapyPlanRequest request) {
 		log.info("Got the request to make therapist plan : {}", request);
-		boolean therapyPlan = therapyPlanRepository.existsByMedicalRecordIdAndTherapistId(request.getMedicalRecordId(), request.getTherapistId());
-		if (therapyPlan) {
+
+		//Assure that One patient can have Only One therapy Plan
+		TherapyPlan therapyPlan = therapyPlanRepository.findByMedicalRecordIdAndTherapistId(request.getMedicalRecordId(), request.getTherapistId());
+		if (therapyPlan!=null) {
+			log.info("Therapy plan already exist with id:{}",therapyPlan.getTherapyPlanId());
 			return true;
 		}
+
+		//Check Therapist Exist or not
 		Therapist therapist = therapistRepository.findTherapistByUserId(request.getTherapistId());
-		if (therapist == null) {
+		if (therapist ==null) {
 			log.warn("No therapist found with id {}", request.getTherapistId());
 			return false;
 		}
-		boolean medicalRecordCheck = patientClient.checkMedicalRecordByMedicalId(request.getMedicalRecordId());
-		if (!medicalRecordCheck) {
-			log.warn("No medical record found with id {}", request.getMedicalRecordId());
-			return false;
+		log.info("Got Therapist : {}",therapist);
+
+		//Check and Update Status of medical Record
+		boolean updated = updateMedicalRecordStatus(request.getMedicalRecordId(), "WAITING_FOR_THERAPIST_APPROVAL");
+		if (!updated) {
+			log.warn("Failed to update medical record [{}] while starting therapy", request.getMedicalRecordId());
 		}
+
 		TherapyPlan plan = TherapyPlan.builder()
 				.medicalRecordId(request.getMedicalRecordId())
-				.completedSessions(0)
-				.therapistDecisionStatus(TherapistDecisionStatus.PENDING)
-				.status(TherapyPlanStatus.NOT_ASSIGNED)
+				.status(TherapyPlanStatus.ASSIGNED)
+				.totalTherapySessions(request.getTotalTherapySessions())
 				.therapistId(therapist.getUserId())
 				.therapistName(therapist.getTherapistName())
 				.build();
 
-		TherapyPlan saved = therapyPlanRepository.save(plan);
+		therapyPlanRepository.save(plan);
 		return true;
 	}
 
-
-	public void updateTherapistDecision(
-			String therapyPlanId,
-			TherapistDecisionStatus decisionStatus
-	) {
-		TherapyPlan plan = therapyPlanRepository.findTherapyPlanByTherapyPlanId(therapyPlanId).orElse(null);
-		if (plan == null) {
-			log.info("NO Therapy plan found");
-			return;
-		}
-		if (plan.getTherapistDecisionStatus() != TherapistDecisionStatus.PENDING) {
-			throw new IllegalStateException("Decision already taken");
-		}
-
-		plan.setTherapistDecisionStatus(decisionStatus);
-
-		if (decisionStatus == TherapistDecisionStatus.APPROVED) {
-			plan.setStatus(TherapyPlanStatus.ASSIGNED);
-		}
-		if(decisionStatus == TherapistDecisionStatus.REJECTED){
-			MedicalRecordUpdateRequest  medicalRecordUpdateRequest = MedicalRecordUpdateRequest.builder()
-					.needTherapy(false)
-					.build();
-//			Boolean saveToMedicalRecord = patientClient.updateMedicalRecord(plan.getMedicalRecordId(),medicalRecordUpdateRequest);
-			deleteTherapyPlan(therapyPlanId);
-		} else therapyPlanRepository.save(plan);
-	}
-
 	public void startTherapy(String therapyPlanId) {
-		TherapyPlan plan = therapyPlanRepository.findTherapyPlanByTherapyPlanId(therapyPlanId).orElse(null);
-		if (plan == null) {
-			log.info("NO Therapy plan");
-			return;
-		}
-		if (plan.getTherapistDecisionStatus() != TherapistDecisionStatus.APPROVED) {
-			throw new IllegalStateException("Therapy not approved by therapist");
-		}
-
-		if (plan.getStatus() != TherapyPlanStatus.ASSIGNED) {
-			throw new IllegalStateException("Therapy cannot be started");
-		}
-
+		TherapyPlan plan = therapyPlanRepository.findTherapyPlanByTherapyPlanId(therapyPlanId).orElseThrow(() ->new RuntimeException("No Therapy plan exist with id: "+therapyPlanId));
+		log.info("Got Plan : [ {} ]",plan);
 		plan.setStatus(TherapyPlanStatus.ACTIVE);
+		boolean updated = updateMedicalRecordStatus(plan.getMedicalRecordId(), "THERAPIST_APPROVED");
+		if (!updated) {
+			log.warn("Failed to update medical record [{}] while starting therapy", plan.getMedicalRecordId());
+		}
 		therapyPlanRepository.save(plan);
 	}
-
-	public void completeSession(String therapyPlanId) {
-		TherapyPlan plan = therapyPlanRepository.findTherapyPlanByTherapyPlanId(therapyPlanId).orElse(null);
-		if (plan == null) {
-			return;
-		}
-		if (plan.getStatus() != TherapyPlanStatus.ACTIVE) {
-			throw new IllegalStateException("Therapy is not active");
-		}
-
-		plan.setCompletedSessions(plan.getCompletedSessions() + 1);
-
-		if (plan.getCompletedSessions() >= plan.getTotalSessions()) {
-			plan.setStatus(TherapyPlanStatus.COMPLETED);
-		}
-
-		therapyPlanRepository.save(plan);
-	}
-
 
 	public TherapyPlanDTO getTherapyPlanById(String therapyPlanId) {
 		TherapyPlan plan = therapyPlanRepository.findById(therapyPlanId)
@@ -130,11 +88,11 @@ public class TherapyPlanService {
 	public TherapyPlanDTO mapToResponse(TherapyPlan plan) {
 		return TherapyPlanDTO.builder()
 				.therapyPlanId(plan.getTherapyPlanId())
-				.therapyType(plan.getTherapyType())
-				.totalSessions(plan.getTotalSessions())
-				.completedSessions(plan.getCompletedSessions())
+				.therapies(plan.getTherapies())
+				.totalTherapySessions(plan.getTotalTherapySessions())
+				.bookedTherapySessions(plan.getBookedTherapySessions())
+				.completedTherapySessions(plan.getCompletedTherapySessions())
 				.sessionDurationMinutes(plan.getSessionDurationMinutes())
-				.therapistDecisionStatus(plan.getTherapistDecisionStatus())
 				.status(plan.getStatus())
 				.frequency(plan.getFrequency())
 				.startDate(plan.getStartDate())
@@ -162,15 +120,75 @@ public class TherapyPlanService {
 	) {
 		List<TherapyPlan> plans =
 				therapyPlanRepository.findAllByTherapistId(therapistId);
-
 		return plans.stream()
 				.map(this::mapToResponse)
 				.toList();
 	}
 
-	public void deleteTherapyPlan(String planId){
-		TherapyPlan therapyPlan = therapyPlanRepository.findTherapyPlansByTherapyPlanId(planId);
-		therapyPlanRepository.delete(therapyPlan);
+
+	public boolean updateMedicalRecordStatus(String medicalRecordId, String status) {
+		try {
+			MedicalRecordUpdateRequest request = MedicalRecordUpdateRequest.builder()
+					.sessionMedicalRecordStatus(MedicalRecordStatus.valueOf(status))
+					.build();
+
+			log.info("Updating Medical Record [{}] with status [{}]", medicalRecordId, status);
+			return patientClient.updateMedicalRecord(medicalRecordId, request);
+		} catch (IllegalArgumentException e) {
+			log.error("Invalid MedicalRecordStatus [{}] provided", status, e);
+			return false;
+		} catch (Exception e) {
+			log.error("Failed to update medical record [{}]", medicalRecordId, e);
+			return false;
+		}
 	}
 
+	public boolean diagnosedByTherapist(String medicalRecordId, TherapyPlanRequest request) {
+		TherapyPlan plan = therapyPlanRepository.findTherapyPlansByMedicalRecordId(medicalRecordId).orElseThrow(()->new RuntimeException("No Therapy Plan with medical Id: "+medicalRecordId));
+
+		plan.setTherapies(request.getTherapies());
+		plan.setTherapistNotes(request.getTherapistNotes());
+		plan.setStatus(TherapyPlanStatus.ACTIVE);
+		plan.setTotalTherapySessions(request.getTotalTherapySessions());
+
+		boolean patientStatusUpdated = updateMedicalRecordStatus(medicalRecordId, "THERAPY_IN_PROGRESS");
+
+		if (!patientStatusUpdated) {
+			log.warn("Therapy plan updated locally, but failed to update Patient Microservice status");
+		}
+		therapyPlanRepository.save(plan);
+
+		log.info("Therapy plan for record {} is now ACTIVE with selected therapies", medicalRecordId);
+		return true;
+	}
+
+
+
+	@Transactional
+	public boolean completeSession(String sessionId) {
+		TherapySession session = sessionRepository.findById(sessionId)
+				.orElseThrow(() -> new RuntimeException("Session not found"));
+
+		if (session.getStatus() == SlotStatus.COMPLETED) return true;
+
+		// 1. Session status badlo
+		session.setStatus(SlotStatus.COMPLETED);
+		sessionRepository.save(session);
+
+		// 2. Plan update logic
+		TherapyPlan plan = therapyPlanRepository.findById(session.getTherapyPlanId())
+				.orElseThrow(() -> new RuntimeException("Plan not found"));
+
+		// Booked kam karo aur Completed badhao
+		plan.setBookedTherapySessions(Math.max(0, plan.getBookedTherapySessions() - 1));
+		plan.setCompletedTherapySessions(plan.getCompletedTherapySessions() + 1);
+
+		// Agar saare sessions ho gaye toh status COMPLETED kar do
+		if (plan.getCompletedTherapySessions() >= plan.getTotalTherapySessions()) {
+			plan.setStatus(TherapyPlanStatus.COMPLETED);
+		}
+
+		therapyPlanRepository.save(plan);
+		return true;
+	}
 }

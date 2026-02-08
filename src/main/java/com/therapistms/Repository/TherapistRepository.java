@@ -20,4 +20,6 @@ public interface TherapistRepository extends JpaRepository<Therapist, Long> {
 	Therapist findTherapistByUserId(String userId);
 
 	Therapist findTherapistByEmail(String email);
+
+	boolean existsTherapistByUserId(String userId);
 }
