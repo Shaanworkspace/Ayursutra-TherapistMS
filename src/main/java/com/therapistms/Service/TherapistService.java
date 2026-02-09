@@ -27,6 +27,7 @@ public class TherapistService {
     private final TherapistRepository therapistRepository;
     private final PatientClient patientClient;
     private final TherapyPlanRepository therapyPlanRepository;
+    private final TherapistSlotService therapistSlotService;
 
     public Therapist addTherapist(RegisterRequestDTO requestDTO) {
         Therapist therapist = Therapist.builder()
@@ -36,7 +37,14 @@ public class TherapistService {
                 .password(requestDTO.getPassword())
                 .build();
         log.info("Saving therapist : {}",therapist);
-        return therapistRepository.save(therapist);
+        Therapist savedTherapist = therapistRepository.save(therapist);
+
+        try {
+            therapistSlotService.initDefaultSlots(savedTherapist.getUserId());
+        } catch (Exception e) {
+            log.error("Failed to generate default slots for new therapist: {}", savedTherapist.getUserId(), e);
+        }
+        return savedTherapist;
     }
 
     //  Bulk add therapists

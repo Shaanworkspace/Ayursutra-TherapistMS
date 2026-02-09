@@ -52,6 +52,22 @@ public class TherapistSlotService {
 	}
 
 
+
+	public void initDefaultSlots(String therapistId) {
+		LocalDate today = LocalDate.now();
+
+		for (int i = 0; i < 7; i++) {
+			LocalDate targetDate = today.plusDays(i);
+
+			List<TherapistSlot> existing = slotRepository.findByTherapistIdAndSlotDate(therapistId, targetDate);
+
+			if (existing.isEmpty()) {
+				List<TherapistSlot> defaultSlots = generateSlots(therapistId, targetDate);
+				slotRepository.saveAll(defaultSlots);
+				log.info("Generated default slots for therapist: {} on date: {}", therapistId, targetDate);
+			}
+		}
+	}
 	public void deleteSlot(String slotId) {
 		slotRepository.deleteById(slotId);
 	}
@@ -77,34 +93,26 @@ public class TherapistSlotService {
 		return slotRepository.save(slot);
 	}
 
-
-	public List<TherapistSlot> generateSlots(
-			String therapistId,
-			LocalDate date
-	) {
-
+	public List<TherapistSlot> generateSlots(String therapistId, LocalDate date) {
 		List<TherapistSlot> slots = new ArrayList<>();
+		LocalTime start = LocalTime.of(9, 0);
 
-		LocalTime start = LocalTime.of(8, 0);
-
-		for (int i = 0; i < 8; i++) {
-
+		for (int i = 0; i < 6; i++) {
 			LocalTime end = start.plusMinutes(60);
 
-			TherapistSlot slot = TherapistSlot.builder()
+			slots.add(TherapistSlot.builder()
 					.therapistId(therapistId)
 					.slotDate(date)
 					.startTime(start)
 					.endTime(end)
 					.status(SlotStatus.AVAILABLE)
-					.build();
+					.build());
 
-			slots.add(slot);
-
-			start = end.plusMinutes(30); // break
+			start = end.plusMinutes(30);
 		}
 		return slots;
 	}
+
 	public TherapistSlot addExtraSlotByEmail(
 			String email,
 			LocalDate date,

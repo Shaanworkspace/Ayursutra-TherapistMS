@@ -47,7 +47,8 @@ public class TherapistController {
             List<String> medicalIds = therapyPlanService.getMedicalIdsByTherapistId(therapistId);
 
             if(medicalIds.isEmpty()){
-                throw  new RuntimeException("No Medical record");
+                log.warn("No medical records");
+                return ResponseEntity.ok(List.of());
             }
             List<MedicalRecordResponseDTO> record = patientClient.getMedicalRecordsByIds(medicalIds);
             return ResponseEntity.ok(record);

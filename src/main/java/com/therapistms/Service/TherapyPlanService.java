@@ -186,6 +186,8 @@ public class TherapyPlanService {
 		// Agar saare sessions ho gaye toh status COMPLETED kar do
 		if (plan.getCompletedTherapySessions() >= plan.getTotalTherapySessions()) {
 			plan.setStatus(TherapyPlanStatus.COMPLETED);
+			updateMedicalRecordStatus(session.getMedicalRecordId(),"COMPLETED");
+			log.info("Marked as Completed");
 		}
 
 		therapyPlanRepository.save(plan);
